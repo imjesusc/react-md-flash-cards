@@ -3,7 +3,7 @@
 - [x] Iniciar proyecto con Vite, React y TypeScript
 - [x] Agregar dominio de aplicación (models)
 - [ ] Implementar casos de uso (store - hooks)
-  - [ ] Cargar tarjetas
+  - [x] Cargar tarjetas (parsear desde contenido markdown)
   - [ ] Mostrar tarjeta
   - [ ] Mostrar siguiente tarjeta
   - [ ] Actualizar estado de tarjeta
