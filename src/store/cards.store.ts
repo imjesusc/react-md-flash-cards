@@ -49,7 +49,6 @@ export const useCardsStore = create<CardsState>()(
           currentCard: nextCard,
         });
       },
-
       updateCardStatus: (cardStatus: CardStatusEnum) => {
         const currentCard = get().currentCard;
         if (!currentCard) return;
@@ -61,7 +60,18 @@ export const useCardsStore = create<CardsState>()(
           currentCard: updatedCard,
         });
       },
-      removeUnknownCards: () => {},
+      removeUnknownCards: () => {
+        const cards = get().cards;
+        if (!cards.length) return;
+
+        const newCards = cards.filter(
+          (card) => card.status !== CardStatusEnum.UNKNOWN,
+        );
+
+        set({
+          cards: newCards,
+        });
+      },
     }),
     { name: "__md_flash_cards__" },
   ),
