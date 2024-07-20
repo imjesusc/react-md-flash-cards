@@ -29,9 +29,6 @@ export const useCardsStore = create<CardsState>()(
         set({
           name,
           cards,
-        });
-
-        set({
           currentCard: cards[0],
         });
       },
