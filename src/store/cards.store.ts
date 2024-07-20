@@ -3,6 +3,7 @@ import { extractMdSections } from "../utilities/extract-md-sections.utilitie";
 import { Card } from "../models/card.model";
 import { create } from "zustand";
 import { cardAdapter } from "../adapters/card.adapter";
+import { CardStatusEnum } from "../models/card-status-enum";
 
 interface CardsState {
   name: string;
@@ -10,7 +11,7 @@ interface CardsState {
   currentCard: Card | null;
   loadCards: (name: string, content: string) => void;
   getNextCard: () => void;
-  updateCardStatus: (cardId: string) => void;
+  updateCardStatus: (cardStatus: CardStatusEnum) => void;
   removeUnknownCards: () => void;
 }
 
@@ -38,6 +39,8 @@ export const useCardsStore = create<CardsState>()(
         const currentCard = get().currentCard;
         const cards = get().cards;
 
+        if (!currentCard) return;
+
         const index = cards.findIndex((card) => card.id === currentCard?.id);
         const nextIndex = (index + 1) % get().cards.length;
         const nextCard = cards[nextIndex];
@@ -46,7 +49,18 @@ export const useCardsStore = create<CardsState>()(
           currentCard: nextCard,
         });
       },
-      updateCardStatus: (cardId: string) => {},
+
+      updateCardStatus: (cardStatus: CardStatusEnum) => {
+        const currentCard = get().currentCard;
+        if (!currentCard) return;
+
+        const updatedCard = { ...currentCard };
+        updatedCard.status = cardStatus;
+
+        set({
+          currentCard: updatedCard,
+        });
+      },
       removeUnknownCards: () => {},
     }),
     { name: "__md_flash_cards__" },
