@@ -8,7 +8,6 @@ interface CardsState {
   name: string;
   cards: Card[];
   currentCard: Card | null;
-  currentPosition: number;
   loadCards: (name: string, content: string) => void;
   getNextCard: () => void;
   updateCardStatus: (cardId: string) => void;
@@ -17,7 +16,7 @@ interface CardsState {
 
 export const useCardsStore = create<CardsState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       name: "",
       cards: [],
       currentCard: null,
@@ -35,7 +34,18 @@ export const useCardsStore = create<CardsState>()(
           currentCard: cards[0],
         });
       },
-      getNextCard: () => {},
+      getNextCard: () => {
+        const currentCard = get().currentCard;
+        const cards = get().cards;
+
+        const index = cards.findIndex((card) => card.id === currentCard?.id);
+        const nextIndex = (index + 1) % get().cards.length;
+        const nextCard = cards[nextIndex];
+
+        set({
+          currentCard: nextCard,
+        });
+      },
       updateCardStatus: (cardId: string) => {},
       removeUnknownCards: () => {},
     }),
