@@ -1,18 +1,19 @@
-import { persist } from "zustand/middleware";
-import { extractMdSections } from "../utilities/extract-md-sections.utilitie";
-import { Card } from "../models/card.model";
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { cardAdapter } from "../adapters/card.adapter";
 import { CardStatusEnum } from "../models/card-status-enum";
+import { Card } from "../models/card.model";
+import { extractMdSections } from "../utilities/extract-md-sections.utilitie";
 
 interface CardsState {
   name: string;
   cards: Card[];
   currentCard: Card | null;
   loadCards: (name: string, content: string) => void;
-  getNextCard: () => void;
-  updateCardStatus: (cardStatus: CardStatusEnum) => void;
-  removeUnknownCards: () => void;
+  restartCards: () => void;
+  reset: () => void;
+  getNextCard: (cardId: string) => void;
+  checkStatus: (cardId: string) => void;
 }
 
 export const useCardsStore = create<CardsState>()(
@@ -21,7 +22,7 @@ export const useCardsStore = create<CardsState>()(
       name: "",
       cards: [],
       currentCard: null,
-      currentPosition: 0,
+
       loadCards: (name: string, content: string) => {
         const mdSections = extractMdSections(content);
         const cards = mdSections.map(cardAdapter);
@@ -32,44 +33,58 @@ export const useCardsStore = create<CardsState>()(
           currentCard: cards[0],
         });
       },
-      getNextCard: () => {
-        const currentCard = get().currentCard;
-        const cards = get().cards;
 
-        if (!currentCard) return;
-
-        const index = cards.findIndex((card) => card.id === currentCard?.id);
-        const nextIndex = (index + 1) % get().cards.length;
-        const nextCard = cards[nextIndex];
-
-        set({
-          currentCard: nextCard,
-        });
+      restartCards: () => {
+        const updatedCards = get().cards.map((card) => ({
+          ...card,
+          status: CardStatusEnum.UNKNOWN,
+        }));
+        set({ cards: updatedCards, currentCard: updatedCards[0] });
       },
-      updateCardStatus: (cardStatus: CardStatusEnum) => {
-        const currentCard = get().currentCard;
-        if (!currentCard) return;
 
-        const updatedCard = { ...currentCard };
-        updatedCard.status = cardStatus;
-
-        set({
-          currentCard: updatedCard,
-        });
-      },
-      removeUnknownCards: () => {
+      getNextCard: (cardId: string) => {
         const cards = get().cards;
-        if (!cards.length) return;
-
-        const newCards = cards.filter(
-          (card) => card.status !== CardStatusEnum.UNKNOWN,
+        const unknownCards = cards.filter(
+          (card) => card.status === CardStatusEnum.UNKNOWN
         );
 
+        if (unknownCards.length === 0) {
+          set({ currentCard: null });
+          return;
+        }
+
+        const currentCardIndex = unknownCards.findIndex(
+          (card) => card.id === cardId
+        );
+        const indexRandom = Math.floor(Math.random() * unknownCards.length);
+
+        const nextCard =
+          unknownCards[
+            indexRandom === currentCardIndex
+              ? (indexRandom + 1) % unknownCards.length
+              : indexRandom
+          ];
+
+        set({ currentCard: nextCard });
+      },
+
+      checkStatus: (cardId: string) => {
+        const updatedCards = get().cards.map((card) =>
+          card.id === cardId ? { ...card, status: CardStatusEnum.KNOWN } : card
+        );
+        set({ cards: updatedCards });
+        const currentCard = updatedCards.find((card) => card.id === cardId);
+        set({ currentCard });
+      },
+
+      reset: () => {
         set({
-          cards: newCards,
+          name: "",
+          cards: [],
+          currentCard: null,
         });
       },
     }),
-    { name: "__md_flash_cards__" },
-  ),
+    { name: "__md_flash_cards__" }
+  )
 );
